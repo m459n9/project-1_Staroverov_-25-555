@@ -39,7 +39,6 @@ def random_event(game_state: dict) -> None:
     room_key = game_state.get("current_room", "entrance")
     room = ROOMS.get(room_key, {})
 
-    # редкость события: ~1 из 10
     if pseudo_random(seed, 10) != 0:
         return
 
@@ -117,6 +116,7 @@ def solve_puzzle(game_state: dict) -> None:
         "париж": {"париж"},
         "урок": {"урок"},
         "равны": {"равны", "одинаковы"},
+        "резонанс": {"резонанс"},
     }
 
     correct_key = str(correct_answer).strip().lower()
@@ -127,8 +127,8 @@ def solve_puzzle(game_state: dict) -> None:
         room["puzzle"] = None
 
         reward_by_room = {
-            "hall": "treasure key",
-            "library": "rusty key",
+            "hall": "treasure_key",
+            "library": "rusty_key",
         }
         reward = reward_by_room.get(room_key)
         if reward and reward not in game_state["player_inventory"]:
@@ -142,35 +142,33 @@ def solve_puzzle(game_state: dict) -> None:
 
 
 def attempt_open_treasure(game_state: dict) -> None:
-    """Открывает сундук ключом или кодом. Успех — победа в игре."""
+    """
+    Открывает сундук ключом или кодом (по ТЗ: победа через solve в treasure_room).
+    Если есть treasure_key — сразу победа.
+    Если ключа нет — предложить ввести код (верный код → победа).
+    Проверку на наличие сундука как блокер убираем, но если он в инвентаре —
+    возвращаем на место и продолжаем.
+    """
     room_key = game_state["current_room"]
     room = ROOMS[room_key]
     items = room.get("items", [])
     inv = game_state.get("player_inventory", [])
 
-    chest_in_room = "treasure chest" in items
-    chest_in_inv = "treasure chest" in inv
+    chest_in_room = "treasure_chest" in items
+    chest_in_inv = "treasure_chest" in inv
 
-    if not chest_in_room and chest_in_inv:
+    if chest_in_inv:
         print("Вы ставите сундук обратно на стол.")
-        inv.remove("treasure chest")
-        items.append("treasure chest")
+        inv.remove("treasure_chest")
+        items.append("treasure_chest")
         chest_in_room = True
 
-    if not chest_in_room:
-        print("Сундук уже открыт или отсутствует.")
-        return
-
-    has_key = any(
-        k in inv for k in ("treasure key", "rusty key")
-    )
+    has_key = "treasure_key" in inv
 
     if has_key:
         print("Вы применяете ключ, и замок щёлкает. Сундук открыт!")
-        if "treasure chest" in items:
-            items.remove("treasure chest")
-        if "treasure chest" in inv:
-            inv.remove("treasure chest")
+        if "treasure_chest" in items:
+            items.remove("treasure_chest")
         print("В сундуке сокровище! Вы победили!")
         game_state["game_over"] = True
         return
@@ -190,10 +188,8 @@ def attempt_open_treasure(game_state: dict) -> None:
     code = get_input("Введите код: ").strip()
     if code.lower() == str(correct_code).strip().lower():
         print("Замок щёлкнул! Сундук открыт.")
-        if "treasure chest" in items:
-            items.remove("treasure chest")
-        if "treasure chest" in inv:
-            inv.remove("treasure chest")
+        if "treasure_chest" in items:
+            items.remove("treasure_chest")
         print("В сундуке сокровище! Вы победили!")
         game_state["game_over"] = True
     else:

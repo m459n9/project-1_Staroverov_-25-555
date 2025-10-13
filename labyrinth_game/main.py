@@ -32,10 +32,8 @@ def process_command(game_state: dict, command: str, commands: dict) -> None:
         case "take":
             actions.take_item(game_state, arg)
         case "use":
-            if arg.strip().lower() == "treasure chest":
-                attempt_open_treasure(game_state)
-            else:
-                actions.use_item(game_state, arg)
+            # Победа через сундук должна происходить командой solve в treasure_room.
+            actions.use_item(game_state, arg)
         case "inventory":
             actions.show_inventory(game_state)
         case "solve":
